@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harcamalar Takibi</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            max-width: 800px;
+            width: 100%;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        .balance {
+            color: green;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        form {
+            margin-bottom: 30px;
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        form label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        form input, form button {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        form button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+        form button:hover {
+            background-color: #218838;
+        }
+        .card-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+        }
+        .card {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .card .description {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        .card .amount {
+            font-size: 1.2rem;
+        }
+        .positive {
+            color: green;
+        }
+        .negative {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="balance">Güncel Bakiye: {{ balance }} TL</h1>
+
+        <h2>Anapara Ekle</h2>
+        <form action="/add_funds" method="POST">
+            <label>Açıklama:</label>
+            <input type="text" name="description" required>
+
+            <label>Miktar:</label>
+            <input type="number" name="amount" step="0.01" required>
+
+            <label>Tarih:</label>
+            <input type="date" name="date" required>
+
+            <button type="submit">Ekle</button>
+        </form>
+
+        <h2>Harcama Ekle</h2>
+        <form action="/add_expense" method="POST">
+            <label>Açıklama:</label>
+            <input type="text" name="description" required>
+
+            <label>Miktar:</label>
+            <input type="number" name="amount" step="0.01" required>
+
+            <label>Tarih:</label>
+            <input type="date" name="date" required>
+
+            <button type="submit">Harcama Yap</button>
+        </form>
+
+        <h2>Son 10 İşlem</h2>
+        <div class="card-list">
+            {% for transaction in transactions %}
+            <div class="card">
+                <div class="description">{{ transaction.date }} - {{ transaction.description }}</div>
+                <div class="amount {{ transaction.class }}">
+                    {{ transaction.amount }} TL
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <h2>Verileri Dışa Aktar</h2>
+        <a href="/export_csv"><button>CSV Olarak İndir</button></a>
+    </div>
+    </div>
+</body>
+</html>
