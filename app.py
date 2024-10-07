@@ -4,7 +4,11 @@ from datetime import datetime
 import csv
 from io import StringIO
 app = Flask(__name__)
+from datetime import datetime
+import locale
 
+# Türkçe tarih formatı için locale ayarı
+locale.setlocale(locale.LC_TIME, 'tr_TR.UTF-8')
 # Veritabanı bağlantısı ve tabloların oluşturulması
 def connect_db():
     conn = sqlite3.connect('budget.db')
@@ -29,20 +33,37 @@ def init_db():
             conn.execute('INSERT INTO balance (id, total) VALUES (1, 0)')
         conn.commit()
 
+# İşlem ekleme (Anapara veya Harcama)
+@app.route('/add_transaction', methods=['POST'])
+def add_transaction():
+    description = request.form['description']
+    amount = float(request.form['amount'])
+    date = request.form['date']
+
+    conn = connect_db()
+    conn.execute('INSERT INTO transactions (description, amount, date) VALUES (?, ?, ?)', (description, amount, date))
+    conn.execute('UPDATE balance SET total = total + ? WHERE id = 1', (amount,))
+    conn.commit()
+    conn.close()
+    return redirect('/')
+
+# Ana sayfa, işlemleri ve güncel bakiyeyi gösterir
 @app.route('/')
 def index():
     conn = connect_db()
     transactions = conn.execute('SELECT * FROM transactions ORDER BY date DESC LIMIT 10').fetchall()
     balance = conn.execute('SELECT total FROM balance WHERE id = 1').fetchone()['total']
     conn.close()
-    
+
     formatted_transactions = [{
+        'id': txn['id'],
         'description': txn['description'],
         'amount': "{:+,.2f}".format(float(txn['amount'])),
-        'date': datetime.strptime(txn['date'], '%Y-%m-%d').strftime('%B %d, %Y'),
+        # Tarihi Türkçe gün/ay/yıl formatında yazdırma
+        'date': datetime.strptime(txn['date'], '%Y-%m-%d').strftime('%d %B %Y'),
         'class': 'positive' if txn['amount'] >= 0 else 'negative'
     } for txn in transactions]
-    
+
     return render_template('index.html', balance="{:,.2f}".format(balance), transactions=formatted_transactions)
 
 # Anapara ekleme
@@ -98,7 +119,21 @@ def export_csv():
     output.headers["Content-Disposition"] = "attachment; filename=transactions.csv"
     output.headers["Content-type"] = "text/csv; charset=utf-8"
     return output
+# İşlem silme ve güncelleme
+@app.route('/delete_transaction/<int:transaction_id>')
+def delete_transaction(transaction_id):
+    conn = connect_db()
+    transaction = conn.execute('SELECT amount FROM transactions WHERE id = ?', (transaction_id,)).fetchone()
+
+    if transaction:
+        amount = transaction['amount']
+        conn.execute('DELETE FROM transactions WHERE id = ?', (transaction_id,))
+        conn.execute('UPDATE balance SET total = total - ? WHERE id = 1', (amount,))
+        conn.commit()
+
+    conn.close()
+    return redirect('/')
 
 if __name__ == '__main__':
     init_db()
-    app.run(debug=True)
+    app.run(debug=True , host='0.0.0.0')
