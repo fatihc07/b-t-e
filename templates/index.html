@@ -175,8 +175,18 @@
            background-color:#4CAF50;
            margin-right: 20px;
         }
+
+         /* QR Kod tarayıcı stili */
+         @media (max-width: 768px) {
+            .container {
+                max-width: 100%;
+            }
+            .transaction-card {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
     </style>
-    
 </head>
 <body>
 
@@ -186,7 +196,10 @@
     <div class="container">
         <h1 class="balance">Güncel Bakiye: {{ balance }} TL</h1>
 
-       
+        <!-- Rapor sayfasına yönlendiren link -->
+        <div class="link">
+            <a href="/report">Harcama Raporunu Görüntüle</a>
+        </div>
 
          <!-- Harcama Türü Ekle -->
          <div class="card">
@@ -244,7 +257,7 @@
                 <button type="submit">Harcama Yap</button>
             </form>
         </div>
-
+          
        <!-- Son 10 İşlem -->
       
        <h2>Son 10 İşlem</h2>
@@ -302,6 +315,11 @@
                 }
             });
         }
+
+         
+
+
+       
     </script>
 </body>
 </html>

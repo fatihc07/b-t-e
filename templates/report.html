@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harcama Raporu</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .chart-type-selector {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .chart-type-selector select {
+            padding: 10px;
+            font-size: 1rem;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Harcama Raporu</h1>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Harcama Türü</th>
+                    <th>Toplam Harcama (TL)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in report_data %}
+                <tr>
+                    <td>{{ row.type_name }}</td>
+                    <td>{{ "{:,.2f}".format(row.total_amount) }} TL</td> <!-- Pozitif gösterilen veri -->
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Grafik türü seçici -->
+        <div class="chart-type-selector">
+            <label for="chartType">Grafik Türünü Seçin:</label>
+            <select id="chartType">
+                <option value="pie">Pasta Grafik</option>
+                <option value="bar">Çubuk Grafik</option>
+                <option value="line">Çizgi Grafik</option>
+            </select>
+        </div>
+        <div class="link">
+            <a href="/export_word"><button>Raporu Word Olarak İndir</button></a>
+        </div>
+        
+        <!-- Grafik Gösterimi -->
+        <div class="chart-container">
+            <canvas id="expenseChart"></canvas>
+        </div>
+    </div>
+
+    <script>
+        // Harcama türü ve toplam harcamaları Chart.js'e uygun formatta hazırlama
+        var expenseData = {
+            labels: [{% for row in report_data %}'{{ row.type_name }}', {% endfor %}],  // Harcama türleri
+            datasets: [{
+                label: 'Harcama Dağılımı',
+                data: [{% for row in report_data %}{{ row.total_amount }}, {% endfor %}],  // Harcama miktarları ham veri olarak geçiyor (pozitif)
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        };
+
+        // Varsayılan grafik türü
+        var chartType = 'pie';
+        var ctx = document.getElementById('expenseChart').getContext('2d');
+        var expenseChart = new Chart(ctx, {
+            type: chartType,  // Varsayılan olarak pasta grafik
+            data: expenseData,
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(tooltipItem) {
+                                return tooltipItem.label + ': ' + tooltipItem.raw.toFixed(2) + ' TL';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Grafik türü seçimi
+        document.getElementById('chartType').addEventListener('change', function() {
+            var selectedType = this.value;
+            expenseChart.destroy();  // Eski grafiği yok et
+            expenseChart = new Chart(ctx, {
+                type: selectedType,  // Yeni seçilen grafik türü
+                data: expenseData,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    return tooltipItem.label + ': ' + tooltipItem.raw.toFixed(2) + ' TL';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

@@ -2,11 +2,12 @@ from flask import Flask, render_template, request, redirect, make_response, flas
 import sqlite3
 from datetime import datetime
 import csv
-from io import StringIO
+from io import BytesIO  # Word dosyası için BytesIO kullanıyoruz
 import locale
+from docx import Document  # python-docx ile Word dosyası oluşturma
 
 app = Flask(__name__)
-app.secret_key = 'your_secret_key'  # Flash mesajları için bir gizli anahtar gerekli
+app.secret_key = 'your_secret_key'  # Flash mesajları için gizli anahtar
 
 # Türkçe tarih formatı için locale ayarı
 locale.setlocale(locale.LC_TIME, 'tr_TR.UTF-8')
@@ -45,40 +46,23 @@ def init_db():
             total REAL DEFAULT 0
         )''')
 
-        # Varsayılan bir bakiye kaydı oluştur
         if conn.execute('SELECT COUNT(*) FROM balance').fetchone()[0] == 0:
             conn.execute('INSERT INTO balance (id, total) VALUES (1, 0)')
         
         conn.commit()
 
-# Ana sayfa, işlemleri ve harcama türlerini gösterir
-@app.route('/', methods=['GET', 'POST'])
+# Ana sayfa
+@app.route('/')
 def index():
     conn = connect_db()
-
-    if request.method == 'POST':
-        # Yeni harcama türü ekleme
-        if 'new_type_name' in request.form:
-            type_name = request.form['new_type_name']
-            # Harcama türü daha önce eklenmiş mi kontrol et
-            existing_type = conn.execute('SELECT * FROM expense_types WHERE type_name = ?', (type_name,)).fetchone()
-            if existing_type:
-                flash('Bu harcama türü zaten mevcut!', 'error')  # Hata mesajı
-            else:
-                conn.execute('INSERT INTO expense_types (type_name) VALUES (?)', (type_name,))
-                conn.commit()
-                flash('Harcama türü başarıyla eklendi!', 'success')  # Başarı mesajı
-
-    # Tüm harcama türlerini ve son işlemleri getir
     types = conn.execute('SELECT * FROM expense_types').fetchall()
     transactions = conn.execute('''
         SELECT t.*, e.type_name 
         FROM transactions t
         LEFT JOIN expense_types e ON t.type_id = e.id
         ORDER BY t.date DESC LIMIT 10
-    ''').fetchall()  # İşlemleri ve harcama türlerini birleştirerek getiriyoruz.
+    ''').fetchall()
     balance = conn.execute('SELECT total FROM balance WHERE id = 1').fetchone()['total']
-    
     conn.close()
 
     formatted_transactions = [{
@@ -86,22 +70,32 @@ def index():
         'description': txn['description'],
         'amount': "{:+,.2f}".format(float(txn['amount'])),
         'date': datetime.strptime(txn['date'], '%Y-%m-%d').strftime('%d %B %Y'),
-        'type_name': txn['type_name'],  # Harcama türü ismi
+        'type_name': txn['type_name'],
         'class': 'positive' if txn['amount'] >= 0 else 'negative'
     } for txn in transactions]
 
     return render_template('index.html', balance="{:,.2f}".format(balance), transactions=formatted_transactions, types=types)
 
-# Harcama türlerini silme işlemi
-@app.route('/delete_expense_type', methods=['POST'])
-def delete_expense_type():
+# Harcama raporu sayfası
+@app.route('/report')
+def report():
     conn = connect_db()
-    type_id = request.form['type_id']
-    conn.execute('DELETE FROM expense_types WHERE id = ?', (type_id,))
-    conn.commit()
+    report_data = conn.execute('''
+        SELECT e.type_name, SUM(t.amount) as total_amount
+        FROM transactions t
+        LEFT JOIN expense_types e ON t.type_id = e.id
+        GROUP BY e.type_name
+        HAVING total_amount < 0
+    ''').fetchall()
     conn.close()
-    flash('Harcama türü başarıyla silindi!', 'success')
-    return redirect('/')
+
+    # Rapor verilerini float olarak formatla ve pozitif hale getir
+    formatted_report = [{
+        'type_name': row['type_name'],
+        'total_amount': abs(float(row['total_amount']))  # Negatif değerleri pozitif yapıyoruz
+    } for row in report_data]
+
+    return render_template('report.html', report_data=formatted_report)
 
 # Anapara ekleme
 @app.route('/add_funds', methods=['POST'])
@@ -109,30 +103,30 @@ def add_funds():
     description = request.form['description']
     amount = float(request.form['amount'])
     date = request.form['date']
-    type_id = request.form['type_id']  # Seçilen harcama türü
+    type_id = request.form['type_id']
 
     conn = connect_db()
     conn.execute('INSERT INTO transactions (description, amount, date, type_id) VALUES (?, ?, ?, ?)', (description, amount, date, type_id))
     conn.execute('UPDATE balance SET total = total + ? WHERE id = 1', (amount,))
     conn.commit()
     conn.close()
-    
+
     return redirect('/')
 
 # Harcama ekleme
 @app.route('/add_expense', methods=['POST'])
 def add_expense():
     description = request.form['description']
-    amount = -abs(float(request.form['amount']))  # Harcama her zaman negatif kaydedilir
+    amount = -abs(float(request.form['amount']))  # Harcama negatif olarak kaydedilir
     date = request.form['date']
-    type_id = request.form['type_id']  # Seçilen harcama türü
+    type_id = request.form['type_id']
 
     conn = connect_db()
     conn.execute('INSERT INTO transactions (description, amount, date, type_id) VALUES (?, ?, ?, ?)', (description, amount, date, type_id))
     conn.execute('UPDATE balance SET total = total + ? WHERE id = 1', (amount,))
     conn.commit()
     conn.close()
-    
+
     return redirect('/')
 
 # CSV Dışa Aktarma İşlevi
@@ -167,6 +161,46 @@ def export_csv():
     output.headers["Content-type"] = "text/csv; charset=utf-8"
     return output
 
+# Harcama raporunu Word formatında dışa aktarma
+@app.route('/export_word')
+def export_word():
+    conn = connect_db()
+    report_data = conn.execute('''
+        SELECT e.type_name, SUM(t.amount) as total_amount
+        FROM transactions t
+        LEFT JOIN expense_types e ON t.type_id = e.id
+        GROUP BY e.type_name
+        HAVING total_amount < 0
+    ''').fetchall()
+    conn.close()
+
+    # Word dokümanı oluşturma
+    doc = Document()
+    doc.add_heading('Harcama Raporu', 0)
+
+    # Tablo ekliyoruz
+    table = doc.add_table(rows=1, cols=2)
+    hdr_cells = table.rows[0].cells
+    hdr_cells[0].text = 'Harcama Türü'
+    hdr_cells[1].text = 'Toplam Harcama (TL)'
+
+    # Verileri tabloya ekleme
+    for row in report_data:
+        row_cells = table.add_row().cells
+        row_cells[0].text = row['type_name']
+        row_cells[1].text = "{:,.2f}".format(abs(float(row['total_amount']))) + ' TL'
+
+    # Word dokümanını response olarak döndürüyoruz
+    f = BytesIO()  # BytesIO kullanıyoruz
+    doc.save(f)  # Dosyayı bellekte kaydediyoruz
+    f.seek(0)
+    
+    response = make_response(f.getvalue())
+    response.headers['Content-Disposition'] = 'attachment; filename=harcama_raporu.docx'
+    response.headers['Content-Type'] = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    
+    return response
+
 # İşlem silme
 @app.route('/delete_transaction/<int:transaction_id>', methods=['POST'])
 def delete_transaction(transaction_id):
@@ -183,5 +217,5 @@ def delete_transaction(transaction_id):
     return redirect('/')
 
 if __name__ == '__main__':
-    init_db()
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0', port=8000)
+
