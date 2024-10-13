@@ -53,10 +53,70 @@
             padding: 10px;
             font-size: 1rem;
         }
+
+        /* Navbar Stili */
+    .navbar {
+        width: 100%;
+        background-color: #333;
+        padding: 10px;
+        text-align: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+    }
+
+    .navbar .nav-links {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+    }
+
+    .navbar .nav-links li {
+        display: inline;
+    }
+
+    .navbar .nav-links a {
+        text-decoration: none;
+        color: white;
+        font-size: 1.2rem;
+        padding: 10px 20px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+    .navbar .nav-links a:hover {
+        background-color: #555;
+    }
+
+    /* Responsive Stil */
+    @media (max-width: 768px) {
+        .navbar .nav-links {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .navbar .nav-links a {
+            display: block;
+        }
+    }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+
+    <nav class="navbar">
+        <ul class="nav-links">
+            <a href="/">Anasayfa</a><br>
+            <a href="/report">Harcama Raporunu Görüntüle</a><br>
+            <a href="/filter">Detaylı filtreleme</a><br>
+            <a href="/statistics">İstatistikler</a><br>
+            <a href="/credit_debt">Kredi Kartları</a>
+        </ul>
+    </nav>
 
     <div class="container">
         <h1>Harcama Raporu</h1>
@@ -172,6 +232,51 @@
             });
         });
     </script>
+
+
+<div class="chart-container">
+    <h2>Aylık Harcamalar</h2>
+    <canvas id="monthlySpendingChart" width="400" height="200"></canvas>
+</div>
+
+<script>
+    // Aylık harcamaları göstermek için Chart.js ile Line Chart ekliyoruz
+    fetch('/analytics/monthly_spending')
+        .then(response => response.json())
+        .then(data => {
+            const labels = data.map(entry => entry.month);
+            const amounts = data.map(entry => entry.total_spent);
+
+            const ctx = document.getElementById('monthlySpendingChart').getContext('2d');
+            const chart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Aylık Harcama',
+                        data: amounts,
+                        borderColor: 'rgb(75, 192, 192)',
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(tooltipItem) {
+                                    return tooltipItem.label + ': ' + tooltipItem.raw.toFixed(2) + ' TL';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
+</script>
 
 </body>
 </html>

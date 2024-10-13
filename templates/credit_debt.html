@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kredi Kartı ve Borç Takibi</title>
+    <style>
+        /* Genel sayfa stili */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+
+        /* Ana container */
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+        }
+
+        /* Başlık stili */
+        h1, h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        /* Kredi kartı ve borç kartları */
+        .card-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        /* Kart stili */
+        .card {
+            flex: 1 1 48%;
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Kart üzerindeki grafik desen */
+        .card::before {
+            content: "";
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            background: rgba(255, 255, 255, 0.2);
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 10px;
+            color: #444;
+            z-index: 1;
+            position: relative;
+        }
+
+        .card p {
+            margin: 5px 0;
+            font-size: 1.1rem;
+            color: #333;
+            z-index: 1;
+            position: relative;
+        }
+
+        .card p span {
+            font-weight: bold;
+        }
+
+        /* Kredi kartı stili */
+        .credit-card {
+            background-color: #e3f2fd;  /* Soft mavi */
+            border-left: 5px solid #64b5f6;
+        }
+
+       /* Borç kartı stili */
+       .debt-card {
+            background-color: #ffe0e0;  /* Soft kırmızı */
+            border-left: 5px solid #ef5350;
+            text-align: center;
+        }
+
+        /* Borçlar tablosu stili */
+        .debt-table {
+            width: 100%;
+            margin-top: 20px;
+            border-collapse: collapse;
+            text-align: center; /* Tüm tablo hücrelerini ortala */
+        }
+
+        .debt-table th, .debt-table td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: center; /* Tüm tablo başlıklarını ve hücrelerini ortala */
+        }
+
+        .debt-table th {
+            background-color: #f2f2f2;
+        }
+
+        .debt-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .debt-table tbody tr:hover {
+            background-color: #f9f9f9;
+             padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        .debt-table th {
+            background-color: #f2f2f2;
+        }
+
+        .debt-table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .debt-table tbody tr:hover {
+            background-color: #f9f9f9;
+        }
+
+        /* Ekleme formu stili */
+        .form-section {
+            margin-top: 40px;
+        }
+
+        form input, form select {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        form button {
+            width: 100%;
+            padding: 12px;
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        form button:hover {
+            background-color: #388e3c;
+        }
+
+   /* Responsive tasarım: mobil cihazlar için tabloyu kart yapısına dönüştür */
+@media (max-width: 768px) {
+    table, thead, tbody, th, td, tr {
+        display: block; /* Tabloyu blok seviyesine çekiyoruz */
+    }
+
+    /* Tablo başlıkları gizlenir */
+    thead tr {
+        position: absolute;
+        top: -9999px;
+        left: -9999px;
+    }
+
+    tr {
+        margin-bottom: 20px;
+        
+    }
+
+    /* Her tablo hücresini tek başına bir satır olarak göster */
+    td {
+        position: relative;
+        padding-left: 50%;
+        text-align: center; /* Text hizalamasını sola çek */
+        border: none; /* Kenarlık kaldır */
+        background-color: #f9f9f9; /* Hücrelere hafif arka plan rengi */
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Mobilde hafif gölge efekti */
+        margin-bottom: 10px;
+    }
+
+    /* Hücre başlığı solda küçük gösterim */
+    td:before {
+        content: attr(data-label); /* Hücrelerin başlıklarını içeriğine ekliyoruz */
+        position: absolute;
+        left: 10px;
+        top: 12px;
+        white-space: nowrap;
+        font-weight: bold;
+        color: #333;
+    }
+}
+
+           /* Formları yan yana hizalamak için */
+    .installments {
+        display: flex; /* Formları yatayda hizala */
+        gap: 5px; /* Formlar arasına boşluk bırak */
+    }
+
+    /* Butonların yan yana görünmesi için */
+    .inline-form {
+        display: inline; /* Formları satır içinde tut */
+    }
+
+    .installment-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1.2rem; /* Simgelerin boyutunu ayarla */
+    }
+
+    .installment-btn:focus {
+        outline: none; /* Tıklandığında etrafındaki mavi kenarlığı kaldır */
+    }
+
+    /* Borç Silme Butonu için stil */
+    .delete-btn {
+        background-color: red;
+        color: white;
+        padding: 5px 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .delete-btn:hover {
+        background-color: darkred;
+    }
+    .credit-card {
+        margin-bottom: 20px;
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .credit-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .credit-table th, .credit-table td {
+        padding: 12px;
+        border: 1px solid #ddd;
+        text-align: center;
+    }
+
+    .credit-table th {
+        background-color: #f2f2f2;
+    }
+
+    .credit-table td {
+        background-color: #fff;
+    }
+
+    /* Kalan limit için renkli gösterim */
+    .credit-table td:last-child {
+        color: green;
+        font-weight: bold;
+    }
+
+    .installment-container {
+    display: flex;
+    gap: 5px;  /* Simgeler arasında boşluk */
+    align-items: center;  /* Dikeyde hizalama */
+}
+
+.installment-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;  /* Simgelerin boyutunu ayarla */
+    text-align: center;
+}
+
+.installment-btn:focus {
+    outline: none; /* Tıklandığında etrafındaki mavi kenarlığı kaldır */
+}
+
+/* Flash Mesajlarının Genel Stili */
+.flash-container {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    width: 300px;
+}
+
+.flash-message {
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: #fff;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    opacity: 0.9;
+    transition: transform 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    animation: fadein 0.5s;
+}
+
+/* Başarı Mesajı */
+.flash-message.success {
+    background-color: #4caf50;
+    border-left: 6px solid #2e7d32;
+}
+
+/* Hata Mesajı */
+.flash-message.error {
+    background-color: #f44336;
+    border-left: 6px solid #d32f2f;
+}
+
+/* Bilgi Mesajı */
+.flash-message.info {
+    background-color: #2196f3;
+    border-left: 6px solid #1976d2;
+}
+
+/* Uyarı Mesajı */
+.flash-message.warning {
+    background-color: #ff9800;
+    border-left: 6px solid #f57c00;
+}
+
+/* Kapatma butonu */
+.flash-message .close-btn {
+    margin-left: 15px;
+    font-weight: bold;
+    float: right;
+}
+/* Navbar Stili */
+.navbar {
+        width: 100%;
+        background-color: #333;
+        padding: 10px;
+        text-align: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+    }
+
+    .navbar .nav-links {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+    }
+
+    .navbar .nav-links li {
+        display: inline;
+    }
+
+    .navbar .nav-links a {
+        text-decoration: none;
+        color: white;
+        font-size: 1.2rem;
+        padding: 10px 20px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+    .navbar .nav-links a:hover {
+        background-color: #555;
+    }
+
+    /* Responsive Stil */
+    @media (max-width: 768px) {
+        .navbar .nav-links {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .navbar .nav-links a {
+            display: block;
+        }
+    }
+ /* Formun öğelerini yatayda hizalamak için flex kullanıyoruz */
+  /* Formun öğelerini yatayda hizalamak için flex kullanıyoruz */
+  .update-form {
+        display: flex;
+        align-items: center;
+        gap: 10px; /* Input ve buton arasında boşluk bırak */
+    }
+
+    /* Input ve butonun genişlik oranlarını ayarlıyoruz */
+    .update-form input {
+        flex-grow: 5; /* Input genişliği 8 birim olacak */
+    }
+
+    .update-form button {
+        flex-grow: 1; /* Buton genişliği 4 birim olacak */
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .update-form button:hover {
+        background-color: #388e3c;
+    }
+    .delete-btn {
+        background-color: red;
+        color: white;
+        padding: 8px 12px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .delete-btn:hover {
+        background-color: darkred;
+    }
+    </style>
+</head>
+<body>
+
+
+
+
+    
+
+<nav class="navbar">
+    <ul class="nav-links">
+        <a href="/">Anasayfa</a><br>
+        <a href="/report">Harcama Raporunu Görüntüle</a><br>
+        <a href="/filter">Detaylı filtreleme</a><br>
+        <a href="/statistics">İstatistikler</a><br>
+        <a href="/credit_debt">Kredi Kartları</a>
+    </ul>
+</nav>
+
+ 
+
+    <div class="container">
+
+        <!-- Sayfa Linkleri Menüsü -->
+<!-- Flash Mesajları -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+  <div class="flash-container">
+    {% for category, message in messages %}
+      <div class="flash-message {{ category }}">
+        <span class="close-btn" onclick="this.parentElement.style.display='none';">&times;</span>
+        {{ message }}
+      </div>
+    {% endfor %}
+  </div>
+{% endif %}
+{% endwith %}
+
+        <h1 style="margin-top: 100px;">Kredi Kartı ve Borç Takibi</h1>
+
+        <!-- Kredi Kartları ve Borçlar için Kartlar -->
+        <div class="card-container">
+            <!-- Kredi Kartları -->
+           
+            <div class="card credit-card">
+                <h3>Kredi Kartları</h3>
+                <table class="credit-table">
+                    <thead>
+                       
+                        <tr>
+                           
+                            <th>Kart Adı</th>
+                            <th>Kredi Limiti</th>
+                            <th>Mevcut Borç</th>
+                            <th>Kalan Limit</th>
+                            <th>Limiti Güncelle</th>
+                            <th>İşlem</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for card in credit_cards %}
+                        <tr>
+                           
+                            <td>{{ card.card_name }}</td>
+                            <td>{{ card.credit_limit }} TL</td>
+                            <td>{{ card.current_balance }} TL</td>
+                            <td>{{ card.remaining_limit }} TL</td>
+                            <td>
+                                <form action="/update_credit_limit" method="POST" class="update-form">
+                                    <input type="hidden" name="card_id" value="{{ card.id }}">
+                                    <input type="number" name="new_limit" step="0.01" placeholder="Yeni Limit" required>
+                                    <button type="submit">Güncelle</button>
+                                </form>
+                            </td>
+                            <td>
+                                <form action="/delete_credit_card/{{ card.id }}" method="POST" onsubmit="return confirm('Bu kredi kartını ve ilişkili tüm harcamaları silmek istediğinize emin misiniz?');">
+                                    <button type="submit" class="delete-btn">Sil</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+            
+           
+
+            <div class="card debt-card">
+    <h3>Borçlar</h3>
+    <table class="debt-table">
+        <thead>
+            <tr>
+                <th>Açıklama</th>
+                <th>Kart</th>
+                <th>Toplam Borç</th>
+                <th>Kalan Borç</th>
+                <th>Taksit Sayısı</th>
+                <th>Kalan Taksitler</th>
+                <th>Ödenen Taksitler</th>
+                <th>Son Ödeme Tarihi</th>
+                <th>İşlem</th>
+               
+            </tr>
+        </thead>
+        <tbody>
+        
+            {% for debt in debts %}
+            <tr>
+                <td>{{ debt.description }}</td>
+                <td>{{ debt.card_name }}</td>
+                <td>{{ debt.total_amount }} TL</td>
+                <td>{{ debt.remaining_amount }} TL</td>
+                <td>{{ debt.installment_count }}</td>
+
+                <!-- Kalan Taksitler -->
+                <td>{{ debt.installment_count - debt.paid_installments }}</td>
+
+                <!-- Ödenen taksitler ve tik işareti -->
+                <td>
+                    <div class="installment-container">
+                        {% for i in range(debt.installment_count) %}
+                            <form action="/toggle_installment/{{ debt.id }}/{{ i }}" method="POST" style="display:inline;">
+                                <button type="submit" class="installment-btn">
+                                    {% if i < debt.paid_installments %}
+                                        ✔️ <!-- Ödenen taksit için tik işareti -->
+                                    {% else %}
+                                        ❌ <!-- Henüz ödenmemiş taksit için çarpı işareti -->
+                                    {% endif %}
+                                </button>
+                            </form>
+                        {% endfor %}
+                    </div>
+                </td>
+
+                <!-- Son ödeme tarihi -->
+              
+                <td>
+                   
+                    <p>{{ debt.due_date }}</p>
+                  
+                </td>        
+                <td>
+                    <form action="/delete_debt/{{ debt.id }}" method="POST" onsubmit="return confirm('Bu borcu ve ilişkili verileri silmek istediğinize emin misiniz?');">
+                        <button type="submit" class="delete-btn">Sil</button>
+                    </form>
+                </td>
+                
+              
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+            
+            
+            
+            
+        </div>
+    </div>
+
+    <div class="container form-section">
+        <!-- Kredi Kartı Ekleme Formu -->
+        <h2>Kredi Kartı Ekle</h2>
+        <form action="/add_credit_card" method="POST">
+            <input type="text" name="card_name" placeholder="Kart Adı" required>
+            <input type="number" name="credit_limit" step="0.01" placeholder="Kart Limiti" required>
+            <button type="submit">Kredi Kartı Ekle</button>
+        </form>
+    </div>
+
+    <div class="card add-expense">
+        <h2>Harcama Ekle</h2>
+        <!-- Kredi Kartı Harcama Ekleme Bölümü -->
+        <form action="/credit_add_expense" method="POST">
+            <label for="description">Açıklama:</label>
+            <input type="text" name="description" required>
+            
+            <label for="amount">Miktar:</label>
+            <input type="number" name="amount" step="0.01" required>
+            
+            <label for="installment_count">Taksit Sayısı:</label>
+            <input type="number" name="installment_count" required>
+    
+            <!-- Tarih Girişi -->
+            <label for="expense_date">Harcama Tarihi:</label>
+            <input type="date" name="expense_date" required> <!-- Tarih seçimi ekliyoruz -->
+            
+            <label for="card_id">Kredi Kartı Seçin:</label>
+            <select name="card_id" id="card_id" required>
+                {% for card in credit_cards %}
+                    <option value="{{ card.id }}">
+                        {{ card.card_name }} -  Kalan Limit: {{ card.remaining_limit }} TL
+                    </option>
+                {% endfor %}
+            </select>
+            
+            <button type="submit">Harcama Ekle</button>
+        </form>
+    </div>
+    
+    
+    <script>
+    setTimeout(function() {
+        const flashMessages = document.querySelectorAll('.flash-message');
+        flashMessages.forEach(function(msg) {
+            msg.style.display = 'none';
+        });
+    }, 5000);  // 5 saniye sonra mesajlar kaybolur
+</script>
+
+    
+
+</body>
+</html>

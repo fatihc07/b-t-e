@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ay ve Yıl Bazında Harcama İstatistikleri</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        table {
+            width: 100%;
+            max-width: 600px;
+            border-collapse: collapse;
+            margin-bottom: 40px;
+        }
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .chart-container {
+            width: 100%;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .month-year-select {
+            margin-bottom: 20px;
+        }
+
+
+        /* Navbar Stili */
+    .navbar {
+        width: 100%;
+        background-color: #333;
+        padding: 10px;
+        text-align: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+    }
+
+    .navbar .nav-links {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+    }
+
+    .navbar .nav-links li {
+        display: inline;
+    }
+
+    .navbar .nav-links a {
+        text-decoration: none;
+        color: white;
+        font-size: 1.2rem;
+        padding: 10px 20px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+    .navbar .nav-links a:hover {
+        background-color: #555;
+    }
+
+    /* Responsive Stil */
+    @media (max-width: 768px) {
+        .navbar .nav-links {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .navbar .nav-links a {
+            display: block;
+        }
+    }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+
+    <nav class="navbar">
+        <ul class="nav-links">
+            <a href="/">Anasayfa</a><br>
+            <a href="/report">Harcama Raporunu Görüntüle</a><br>
+            <a href="/filter">Detaylı filtreleme</a><br>
+            <a href="/statistics">İstatistikler</a><br>
+            <a href="/credit_debt">Kredi Kartları</a>
+        </ul>
+    </nav>
+
+    <h1>Ay ve Yıl Bazında Harcama İstatistikleri</h1>
+
+    <!-- Dropdown ile ay ve yıl seçimi -->
+    <form method="POST" action="/statistics" class="month-year-select">
+
+
+
+        <label for="month">Ay Seçin:</label>
+        <select name="month" id="month">
+            {% for month in months %}
+                <option value="{{ month['month'] }}" {% if month['month'] == selected_month %}selected{% endif %}>
+                    {{ month['formatted'] }} <!-- Ay isimlerini Türkçe gösteriyoruz -->
+                </option>
+            {% endfor %}
+        </select>
+
+
+        <label for="year">Yıl Seçin:</label>
+        <select name="year" id="year">
+            {% for year in years %}
+                <option value="{{ year['year'] }}" {% if year['year'] == selected_year %}selected{% endif %}>
+                    {{ year['year'] }}
+                </option>
+            {% endfor %}
+        </select>
+
+      
+
+        <button type="submit">İstatistikleri Göster</button>
+    </form>
+
+    <!-- Kategorilere göre harcama istatistiklerini tablo olarak gösterme -->
+    <table>
+        <thead>
+            <tr>
+                <th>Harcama Türü</th>
+                <th>Toplam Harcama (TL)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in statistics %}
+            <tr>
+                <td>{{ row.type_name }}</td>
+                <td>{{ "{:,.2f}".format(row.total_spent) }} TL</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Harcamaların grafik gösterimi -->
+    <div class="chart-container">
+        <canvas id="monthlyExpenseChart"></canvas>
+    </div>
+
+    <script>
+        // Kategorilere göre harcama verilerini hazırlıyoruz
+        var monthlyExpenseData = {
+            labels: [{% for row in statistics %}'{{ row.type_name }}', {% endfor %}],
+            datasets: [{
+                label: 'Kategorilere Göre Harcama',
+                data: [{% for row in statistics %}{{ row.total_spent }}, {% endfor %}],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(153, 102, 255, 0.2)',
+                    'rgba(255, 159, 64, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(153, 102, 255, 1)',
+                    'rgba(255, 159, 64, 1)'
+                ],
+                borderWidth: 1
+            }]
+        };
+
+        var ctx = document.getElementById('monthlyExpenseChart').getContext('2d');
+        var monthlyExpenseChart = new Chart(ctx, {
+            type: 'bar',  // Çubuk grafik
+            data: monthlyExpenseData,
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
+
+</body>
+</html>

@@ -186,20 +186,77 @@
                 align-items: flex-start;
             }
         }
+
+
+        /* Navbar Stili */
+    .navbar {
+        width: 100%;
+        background-color: #333;
+        padding: 10px;
+        text-align: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+    }
+
+    .navbar .nav-links {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+    }
+
+    .navbar .nav-links li {
+        display: inline;
+    }
+
+    .navbar .nav-links a {
+        text-decoration: none;
+        color: white;
+        font-size: 1.2rem;
+        padding: 10px 20px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+    .navbar .nav-links a:hover {
+        background-color: #555;
+    }
+
+    /* Responsive Stil */
+    @media (max-width: 768px) {
+        .navbar .nav-links {
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .navbar .nav-links a {
+            display: block;
+        }
+    }
     </style>
 </head>
 <body>
 
-
+    <nav class="navbar">
+        <ul class="nav-links">
+            <a href="/">Anasayfa</a><br>
+            <a href="/report">Harcama Raporunu Görüntüle</a><br>
+            <a href="/filter">Detaylı filtreleme</a><br>
+            <a href="/statistics">İstatistikler</a><br>
+            <a href="/credit_debt">Kredi Kartları</a>
+        </ul>
+    </nav>
+    
 
 
     <div class="container">
         <h1 class="balance">Güncel Bakiye: {{ balance }} TL</h1>
 
-        <!-- Rapor sayfasına yönlendiren link -->
-        <div class="link">
-            <a href="/report">Harcama Raporunu Görüntüle</a>
-        </div>
+     
 
          <!-- Harcama Türü Ekle -->
          <div class="card">
@@ -257,7 +314,10 @@
                 <button type="submit">Harcama Yap</button>
             </form>
         </div>
-          
+        
+        
+
+
        <!-- Son 10 İşlem -->
       
        <h2>Son 10 İşlem</h2>
