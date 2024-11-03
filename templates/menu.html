@@ -1,0 +1,102 @@
+<!-- menu.html -->
+<nav class="navbar">
+    <div class="menu-toggle" onclick="toggleMenu()">&#9776;</div> <!-- Hamburger ikon -->
+    <ul class="nav-links">
+        <li><a href="/">Anasayfa</a></li>
+        <li><a href="/report">Harcama Raporunu Görüntüle</a></li>
+        <li><a href="/filter">Detaylı Filtreleme</a></li>
+        <li><a href="/statistics">İstatistikler</a></li>
+        <li><a href="/credit_debt">Kredi Kartları</a></li>
+        <li><a href="/daily_report">Günlük Harcama Raporu</a></li>
+    </ul>
+</nav>
+<style>
+    /* Navbar */
+    .navbar {
+        width: 100%;
+        background-color: #333;
+        padding: 10px;
+        text-align: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+    }
+
+    /* Hamburger icon - default hidden */
+    .menu-toggle {
+        display: none;
+        font-size: 1.5rem;
+        color: white;
+        cursor: pointer;
+    }
+
+    /* Nav links styling */
+    .navbar .nav-links {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+    }
+
+    .navbar .nav-links li {
+        display: inline;
+    }
+
+    .navbar .nav-links a {
+        text-decoration: none;
+        color: white;
+        font-size: 1.2rem;
+        padding: 10px 20px;
+        border-radius: 5px;
+        transition: background-color 0.3s ease;
+    }
+
+    .navbar .nav-links a:hover {
+        background-color: #555;
+    }
+
+    /* Responsive styling */
+    @media (max-width: 768px) {
+        .menu-toggle {
+            display: block;
+        }
+
+        /* Hide nav-links by default in mobile view */
+        .nav-links {
+            display: none;
+            flex-direction: column;
+            background-color: #333;
+            position: absolute;
+            top: 50px;
+            width: 100%;
+            left: 0;
+        }
+
+        /* Show nav-links when .open class is added */
+        .nav-links.open {
+            display: flex;
+        }
+
+        .nav-links li {
+            display: block;
+            margin: 0;
+        }
+
+        .navbar .nav-links a {
+            padding: 15px;
+            font-size: 1rem;
+        }
+    }
+</style>
+
+<script>
+    // Toggle menu visibility for mobile
+    function toggleMenu() {
+        const navLinks = document.querySelector('.nav-links');
+        navLinks.classList.toggle('open');
+    }
+</script>
+</style>

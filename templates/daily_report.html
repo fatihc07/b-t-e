@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Günlük Harcama Raporu</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        .dropdown {
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .date-text {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        select, input {
+            padding: 10px;
+            font-size: 1rem;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+    </style>
+    <script>
+        function updateReport() {
+            const selectedDate = document.getElementById('dateSelector').value;
+            const specificDate = document.getElementById('specificDateInput').value;
+
+            // Eğer 'spesifik tarih' seçiliyse ve tarih girdisi boş değilse URL'e ekle
+            if (selectedDate === 'specific' && specificDate) {
+                window.location.href = `/daily_report?selected_date=specific&specific_date=${specificDate}`;
+            } else if (selectedDate !== 'specific') {
+                window.location.href = `/daily_report?selected_date=${selectedDate}`;
+            }
+        }
+
+        // Spesifik tarih seçimi görünürlüğü kontrolü
+        function toggleSpecificDateInput() {
+            const selectedDate = document.getElementById('dateSelector').value;
+            const specificDateInput = document.getElementById('specificDateInput');
+
+            if (selectedDate === 'specific') {
+                specificDateInput.classList.remove('hidden');
+            } else {
+                specificDateInput.classList.add('hidden');
+            }
+        }
+
+        // Sayfa yüklendiğinde giriş alanının doğru durumda olması için
+        window.onload = function() {
+            toggleSpecificDateInput(); 
+        }
+    </script>
+</head>
+<body>
+
+<div class="container">
+    <h1>{{ date_text }} Harcama Raporu</h1>
+
+    <div class="dropdown">
+        <select id="dateSelector" onchange="toggleSpecificDateInput();">
+            <option value="today" {% if selected_date == 'today' %}selected{% endif %}>Bugün</option>
+            <option value="yesterday" {% if selected_date == 'yesterday' %}selected{% endif %}>Dün</option>
+            <option value="specific" {% if selected_date == 'specific' %}selected{% endif %}>Spesifik Tarih</option>
+        </select>
+
+        <!-- Spesifik tarih girdisi sadece 'Spesifik Tarih' seçildiğinde gösterilecek -->
+        <input type="date" id="specificDateInput" class="{% if selected_date != 'specific' %}hidden{% endif %}" value="{{ specific_date }}" onblur="updateReport()">
+
+        <div class="date-text">{{ date_text }}</div>
+    </div>
+
+    {% if data %}
+    <table>
+        <thead>
+            <tr>
+                <th>Açıklama</th>
+                <th>Miktar</th>
+                <th>Tarih</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in data %}
+            <tr>
+                <td>{{ item.description }}</td>
+                <td>{{ item.amount }} TL</td>
+                <td>{{ item.date }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>Seçilen tarihte harcama bulunamadı.</p>
+    {% endif %}
+</div>
+
+</body>
+</html>

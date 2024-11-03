@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tüm İşlemler</title>
+</head>
+<body>
+
+
+
+
+
+    
+<style>
+
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #2e3440;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    width: 100%;
+    text-align: center;
+    padding-top: 50px;
+}
+
+h1 {
+    color: #eceff4;
+    margin-bottom: 20px;
+    font-size: 2rem;
+}
+
+.card-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    width: 100%;
+}
+
+.transaction-card {
+    display: flex;
+    background-color: #eceff4;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    flex-direction: row;
+    align-items: center;
+}
+
+.amount-section {
+    background-color: #5e81ac;
+    color: #eceff4;
+    padding: 15px;
+    border-radius: 8px 0 0 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 100px;
+    text-align: center;
+}
+
+.amount-section .amount {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.amount-section .date {
+    font-size: 0.9rem;
+    margin-top: 5px;
+    color: #d8dee9;
+}
+
+.details-section {
+    padding: 10px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
+}
+
+.description {
+    font-size: 1.2rem;
+    color: #2e3440;
+    margin-bottom: 5px;
+}
+
+.meta-info {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+    color: #4c566a;
+}
+
+.meta-info span {
+    margin-top: 5px;
+}
+
+/* Responsive Style */
+@media (max-width: 768px) {
+    .transaction-card {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .amount-section {
+        border-radius: 8px 8px 0 0;
+        min-width: 100%;
+        text-align: center;
+    }
+
+    .details-section {
+        align-items: center;
+        text-align: center;
+    }
+}
+
+.transaction-card {
+    display: flex;
+    background-color: #eceff4;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    flex-direction: row;
+    align-items: center;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.transaction-card:hover {
+    transform: scale(1.05); /* Hafif zoom efekti */
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 4px 8px rgba(0, 0, 0, 0.2); /* Beyaz ışık efekti */
+}
+
+.amount-section {
+    background-color: #5e81ac;
+    color: #eceff4;
+    padding: 15px;
+    border-radius: 8px 0 0 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 100px;
+    text-align: center;
+}
+
+.amount-section .amount {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.amount-section .date {
+    font-size: 0.9rem;
+    margin-top: 5px;
+    color: #d8dee9;
+}
+
+.details-section {
+    padding: 10px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    text-align: left;
+}
+
+.description {
+    font-size: 1.2rem;
+    color: #2e3440;
+    margin-bottom: 5px;
+}
+
+.meta-info {
+    display: flex;
+    flex-direction: column;
+    font-size: 0.9rem;
+    color: #4c566a;
+}
+
+.meta-info span {
+    margin-top: 5px;
+}
+
+/* Responsive Style */
+/* Mobil uyumlu düzenlemeler */
+@media (max-width: 768px) {
+    /* Kart yapısını dikey düzenle */
+    .transaction-card {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 10px;
+    }
+
+    .amount-section {
+        font-size: 1.2em;
+        text-align: left;
+    }
+
+    .details-section {
+        font-size: 0.85rem;
+        text-align: left;
+        color: #666;
+    }
+}
+
+@media (max-width: 480px) {
+    /* Daha küçük ekranlarda font boyutlarını küçült */
+    .amount-section {
+        font-size: 1em;
+    }
+
+    .details-section {
+        font-size: 0.8rem;
+    }
+}
+/* Card styling */
+.transaction-card {
+            display: flex;
+            background-color: #eceff4;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            flex-direction: row;
+            align-items: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            margin-bottom: 10px;
+        }
+
+        .transaction-card:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .amount-section, .details-section {
+            padding: 10px;
+        }
+
+        /* Loading spinner */
+        .loader {
+            text-align: center;
+            margin: 20px;
+        }
+</style>
+
+
+
+
+<div class="container">
+    <h1>Tüm İşlemler</h1>
+    <div class="card-container">
+        {% for transaction in transactions %}
+        <div class="transaction-card">
+            <div class="amount-section">
+                <span class="amount">{{ transaction.amount }} TL</span>
+            </div>
+            <div class="details-section">
+                <p class="description">{{ transaction.description }}</p>
+                <div class="meta-info">
+                    <span class="type">Harcama Türü: {{ transaction.type_name }}</span>
+                    <span class="type">Tarih: {{ transaction.date }}</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+</body>
+</html>

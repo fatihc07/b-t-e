@@ -127,16 +127,19 @@ def safe_float(value):
 def index():
     conn = connect_db()
     types = conn.execute('SELECT * FROM expense_types').fetchall()
+    
+    # Fetch the latest transactions
     transactions = conn.execute('''
         SELECT t.*, e.type_name 
         FROM transactions t
         LEFT JOIN expense_types e ON t.type_id = e.id
         ORDER BY t.date DESC LIMIT 10
     ''').fetchall()
+    
     balance = conn.execute('SELECT total FROM balance WHERE id = 1').fetchone()['total']
     conn.close()
 
-
+    # Format transactions for display
     formatted_transactions = [{
         'id': txn['id'],
         'description': txn['description'],
@@ -146,6 +149,7 @@ def index():
         'class': 'positive' if txn['amount'] >= 0 else 'negative'
     } for txn in transactions]
 
+    # Render index with updated transactions
     return render_template('index.html', balance="{:,.2f}".format(balance), transactions=formatted_transactions, types=types)
 
 @app.route('/pay_installment/<int:debt_id>', methods=['POST'])
@@ -719,16 +723,78 @@ def export_word():
 @app.route('/delete_transaction/<int:transaction_id>', methods=['POST'])
 def delete_transaction(transaction_id):
     conn = connect_db()
-    transaction = conn.execute('SELECT amount FROM transactions WHERE id = ?', (transaction_id,)).fetchone()
-
-    if transaction:
-        amount = transaction['amount']
-        conn.execute('DELETE FROM transactions WHERE id = ?', (transaction_id,))
-        conn.execute('UPDATE balance SET total = total - ? WHERE id = 1', (amount,))
-        conn.commit()
-
-    conn.close()
+    
+    try:
+        # Silinecek işlem bilgisini alıyoruz
+        transaction = conn.execute('SELECT amount FROM transactions WHERE id = ?', (transaction_id,)).fetchone()
+        
+        if transaction:
+            amount = transaction['amount']
+            # İşlemi veritabanından siliyoruz
+            conn.execute('DELETE FROM transactions WHERE id = ?', (transaction_id,))
+            # Güncel bakiyeyi güncelliyoruz
+            conn.execute('UPDATE balance SET total = total - ? WHERE id = 1', (amount,))
+            conn.commit()
+            flash('İşlem başarıyla silindi.', 'success')
+        else:
+            flash('İşlem bulunamadı.', 'error')
+            
+    except sqlite3.Error as e:
+        conn.rollback()
+        flash(f"Bir hata oluştu: {e}", 'error')
+    finally:
+        conn.close()
+    
+    # `index` route'una yönlendirme yapıyoruz
     return redirect('/')
+@app.route('/all_transactions')
+def all_transactions():
+    conn = connect_db()
+    transactions = conn.execute('''
+        SELECT t.*, e.type_name 
+        FROM transactions t
+        LEFT JOIN expense_types e ON t.type_id = e.id
+        ORDER BY t.date DESC
+    ''').fetchall()
+    conn.close()
+
+    # Format işlemlerini şablon için hazırlayın
+    formatted_transactions = [{
+        'id': txn['id'],
+        'description': txn['description'],
+        'amount': "{:+,.2f}".format(float(txn['amount'])),
+        'date': datetime.strptime(txn['date'], '%Y-%m-%d').strftime('%d %B %Y'),
+        'type_name': txn['type_name'],
+        'class': 'positive' if txn['amount'] >= 0 else 'negative'
+    } for txn in transactions]
+
+    return render_template('all_transactions.html', transactions=formatted_transactions)
+@app.route('/load_transactions')
+def load_transactions():
+    page = int(request.args.get('page', 1))
+    limit = int(request.args.get('limit', 10))
+    offset = (page - 1) * limit
+    
+    conn = connect_db()
+    transactions = conn.execute('''
+        SELECT t.id, t.description, t.amount, t.date, e.type_name
+        FROM transactions t
+        LEFT JOIN expense_types e ON t.type_id = e.id
+        ORDER BY t.date DESC
+        LIMIT ? OFFSET ?
+    ''', (limit, offset)).fetchall()
+    conn.close()
+
+    # Format the data to be JSON serializable
+    transaction_data = [{
+        'id': txn['id'],
+        'description': txn['description'],
+        'amount': "{:+,.2f}".format(float(txn['amount'])),
+        'date': datetime.strptime(txn['date'], '%Y-%m-%d').strftime('%d %B %Y'),
+        'type_name': txn['type_name']
+    } for txn in transactions]
+
+    return jsonify(transaction_data)
 
 # Filtreleme fonksiyonu
 @app.route('/filter', methods=['GET', 'POST'])
@@ -801,6 +867,49 @@ def filter_transactions():
 
     return render_template('filter.html', transactions=formatted_transactions, types=types, balance=balance)
 
+
+# Günlük harcama raporu sayfası
+@app.route('/daily_report', methods=['GET'])
+def daily_report():
+    conn = connect_db()
+
+    # Tarih seçenekleri
+    today = datetime.now().date()
+    yesterday = today - timedelta(days=1)
+
+    # Dropdown'dan gelen değeri alıyoruz
+    selected_date = request.args.get('selected_date', 'today')
+    specific_date = request.args.get('specific_date')  # Spesifik tarih alanı
+
+    if selected_date == 'today':
+        selected_day = today
+        date_text = 'Bugün'
+    elif selected_date == 'yesterday':
+        selected_day = yesterday
+        date_text = 'Dün'
+    elif selected_date == 'specific' and specific_date:
+        try:
+            selected_day = datetime.strptime(specific_date, '%Y-%m-%d').date()
+            date_text = selected_day.strftime('%d %B %Y')
+        except ValueError:
+            flash('Geçersiz tarih seçimi!', 'error')
+            return redirect('/daily_report')
+    else:
+        flash('Geçersiz seçim!', 'error')
+        return redirect('/daily_report')
+
+    # Veritabanından harcamaları alıyoruz
+    query = '''
+    SELECT description, amount, date FROM transactions
+    WHERE date(date) = ?
+    '''
+    transactions = conn.execute(query, (selected_day,)).fetchall()
+    conn.close()
+
+    # Şablona verileri gönderiyoruz
+    return render_template('daily_report.html', data=transactions, selected_date=selected_date, specific_date=specific_date, date_text=date_text)
+
+
 @app.route('/statistics', methods=['GET', 'POST'])
 def statistics():
     conn = connect_db()
@@ -823,6 +932,11 @@ def statistics():
         WHERE strftime('%Y', t.date) = ? AND strftime('%m', t.date) = ?
         GROUP BY e.type_name
     ''', (selected_year, selected_month)).fetchall()
+
+    # Toplam harcamayı hesaplama (Tüm harcamaların toplamı)
+    total_expense = conn.execute('''
+        SELECT SUM(amount) FROM transactions WHERE amount < 0
+    ''').fetchone()[0] or 0  # Harcama negatifse, toplam negatif olmasın diye sıfır döndür
 
     # Yıllar ve aylar için benzersiz değerleri alıyoruz (Dropdown menüler için)
     available_years = conn.execute('''
@@ -851,8 +965,14 @@ def statistics():
         'formatted': datetime.strptime(m['month'], '%m').strftime('%B')  # Ay ismini Türkçe olarak al
     } for m in available_months]
 
-    return render_template('statistics.html', statistics=formatted_statistics, years=available_years, months=available_months, selected_year=selected_year, selected_month=selected_month)
-
+    # Şablona toplam harcama ekleniyor
+    return render_template('statistics.html', 
+                           statistics=formatted_statistics, 
+                           years=available_years, 
+                           months=available_months, 
+                           selected_year=selected_year, 
+                           selected_month=selected_month,
+                           total_expense=total_expense)
 
 
 if __name__ == '__main__':

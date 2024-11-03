@@ -237,19 +237,14 @@
             display: block;
         }
     }
+  
+
     </style>
 </head>
 <body>
 
-    <nav class="navbar">
-        <ul class="nav-links">
-            <a href="/">Anasayfa</a><br>
-            <a href="/report">Harcama Raporunu Görüntüle</a><br>
-            <a href="/filter">Detaylı filtreleme</a><br>
-            <a href="/statistics">İstatistikler</a><br>
-            <a href="/credit_debt">Kredi Kartları</a>
-        </ul>
-    </nav>
+    {% include 'menu.html' %}
+
     
 
 
@@ -318,21 +313,22 @@
         
 
 
-       <!-- Son 10 İşlem -->
-      
-       <h2>Son 10 İşlem</h2>
-       {% for transaction in transactions %}
-       <div class="transaction-card {{ transaction.class }}">
-        <button class="delete-btn sontur" >{{ transaction.type_name }}</button>
-           <div class="description">{{ transaction.date }} - {{ transaction.description }}</div>
-       
-           <div class="amount">{{ transaction.amount }} TL</div>
-         
-         
-           <button class="delete-btn" onclick="confirmDelete({{ transaction.id }})">Sil</button>
-       </div>
-       {% endfor %}
-   </div>
+   <!-- Son 10 İşlem -->
+<h2>Son 10 İşlem</h2>
+<div class="transaction-container">
+    {% for transaction in transactions %}
+    <div class="transaction-card {{ transaction.class }}">
+        <button class="delete-btn sontur">{{ transaction.type_name }}</button>
+        <div class="description">{{ transaction.date }} - {{ transaction.description }}</div>
+        <div class="amount">{{ transaction.amount }} TL</div>
+        <button class="delete-btn" onclick="confirmDelete({{ transaction.id }})">Sil</button>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Tüm İşlemleri Görüntülemek İçin Link -->
+<a href="/all_transactions"><button>Tüm İşlemleri Gör</button></a>
+
 
    </div>
    </div>
@@ -346,9 +342,7 @@
     </div>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-        // Silme işlemi öncesinde onay kutusu açma
         function confirmDelete(transactionId) {
-            // SweetAlert2 ile onay kutusu aç
             Swal.fire({
                 title: 'Emin misiniz?',
                 text: 'Bu işlemi silmek istediğinize emin misiniz?',
@@ -360,26 +354,29 @@
                 cancelButtonText: 'İptal'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // Onaylandıysa silme işlemini yap ve başarı mesajını göster
-                    Swal.fire({
-                        title: 'Başarılı!',
-                        text: 'Başarıyla silindi!',
-                        icon: 'success',
-                        timer: 2000, // 2 saniye sonra yönlendirme
-                        showConfirmButton: false,
-                        timerProgressBar: true,
-                    }).then(() => {
-                        // 2 saniye sonra sayfayı yönlendir
-                        window.location.href = '/delete_transaction/' + transactionId;
+                    // Silme işlemini gerçekleştirme isteği
+                    fetch('/delete_transaction/' + transactionId, {
+                        method: 'POST',
+                    }).then(response => {
+                        if (response.ok) {
+                            Swal.fire({
+                                title: 'Başarılı!',
+                                text: 'İşlem başarıyla silindi!',
+                                icon: 'success',
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                // Sayfayı yeniden yükleyerek son işlemler listesini güncelle
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire('Hata!', 'Silme işlemi başarısız oldu.', 'error');
+                        }
                     });
                 }
             });
         }
-
-         
-
-
-       
     </script>
+    
 </body>
 </html>
